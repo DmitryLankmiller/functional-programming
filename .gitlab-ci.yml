@@ -1,0 +1,35 @@
+image: generic-c
+
+stages:
+  - format
+  - lint
+  - test
+
+before_script:
+  - ls -l /usr/bin
+  - curl -L -O https://github.com/clojure/brew-install/releases/latest/download/linux-install.sh
+  - chmod +x linux-install.sh
+  - sudo ./linux-install.sh
+  - apt install -y cljfmt clj-kondo
+
+format_check:
+  stage: format
+  script:
+    - cljfmt check .
+  rules:
+    - when: always
+
+lint_check:
+  stage: lint
+  script:
+    - clj-kondo --lint ./*
+  rules:
+    - when: always
+
+test_run:
+  stage: test
+  script:
+    - cd fp-lab-1
+    - clj -X:test
+  rules:
+    - when: always
