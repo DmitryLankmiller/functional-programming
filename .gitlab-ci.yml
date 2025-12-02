@@ -1,16 +1,9 @@
-image: generic-c
+image: gitlab.se.ifmo.ru:5050/dmitry/functional-programming/clojure
 
 stages:
   - format
   - lint
   - test
-
-before_script:
-  - ls -l /usr/bin
-  - curl -L -O https://github.com/clojure/brew-install/releases/latest/download/linux-install.sh
-  - chmod +x linux-install.sh
-  - sudo ./linux-install.sh
-  - apt install -y cljfmt clj-kondo
 
 format_check:
   stage: format
@@ -29,7 +22,7 @@ lint_check:
 test_run:
   stage: test
   script:
-    - cd fp-lab-1
+    - cd lab1
     - clj -X:test
   rules:
     - when: always
