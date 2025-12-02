@@ -277,8 +277,8 @@
 
 Прохождение тестов:
 
-```
-clj -X:test
+```bash
+$ clj -X:test
 
 Running tests in #{"test"}
 
@@ -288,6 +288,16 @@ Testing projecteuler9-test
 
 Ran 14 tests containing 14 assertions.
 0 failures, 0 errors.
+```
+
+## Линтер
+
+Работа линтера:
+
+```bash
+$ clj-kondo --lint ./**/projecteuler*.clj
+
+linting took 48ms, errors: 0, warnings: 0
 ```
 
 ## Заключение
