@@ -70,4 +70,4 @@ jobs:
       # === test ===
       - name: Test
         working-directory: ${{ steps.labdir.outputs.dir }}
-        run: clj -X:test
+        run: clojure -X:test
