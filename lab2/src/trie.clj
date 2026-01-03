@@ -79,7 +79,7 @@
 
 (defn- get-value-root [root key-chars]
   (let [[way left-chars] (get-way root key-chars)]
-    (if (not (empty? left-chars)) nil
+    (if (seq left-chars) nil
         (if (not (:has-value? (last way))) nil
             (:nval (last way))))))
 
@@ -98,14 +98,14 @@
 
 (defn- delete-root [root key-chars]
   (let [[way left-chars] (get-way root key-chars)]
-    (if (not (empty? left-chars)) root
+    (if (seq left-chars) root
         (let [last-node (last way)]
           (if (not (:has-value? last-node)) root
               (loop [nodes (rest (reverse way))
                      new-node (assoc last-node :nval nil :has-value? false)]
                 (if (empty? nodes)
                   (if (or (:has-value? new-node)
-                          (not (empty? (:children new-node))))
+                          (seq (:children new-node)))
                     (assoc root :children (assoc (:children root) (:nkey new-node) new-node))
                     (assoc root :children (dissoc (:children root) (:nkey new-node))))
                   (recur (rest nodes)
@@ -168,23 +168,23 @@
 
 (defn- reduce-left-root [f val root]
   (let [entries (get-entries root)]
-    (if (< 1 (count entries)) val)
-    (let [[first-key first-value] (first entries)]
-      (loop [left-entries (rest entries)
-             acc (f val first-key first-value)]
-        (if (empty? left-entries) acc
-            (let [[cur-key cur-value] (first left-entries)]
-              (recur (rest left-entries) (f acc cur-key cur-value))))))))
+    (if (< 1 (count entries)) val
+        (let [[first-key first-value] (first entries)]
+          (loop [left-entries (rest entries)
+                 acc (f val first-key first-value)]
+            (if (empty? left-entries) acc
+                (let [[cur-key cur-value] (first left-entries)]
+                  (recur (rest left-entries) (f acc cur-key cur-value)))))))))
 
 (defn- reduce-right-root [f val root]
   (let [entries (get-entries root)]
-    (if (< 1 (count entries)) val)
-    (let [[first-key first-value] (last entries)]
-      (loop [left-entries (rest (reverse entries))
-             acc (f val first-key first-value)]
-        (if (empty? left-entries) acc
-            (let [[cur-key cur-value] (first left-entries)]
-              (recur (rest left-entries) (f acc cur-key cur-value))))))))
+    (if (< 1 (count entries)) val
+        (let [[first-key first-value] (last entries)]
+          (loop [left-entries (rest (reverse entries))
+                 acc (f val first-key first-value)]
+            (if (empty? left-entries) acc
+                (let [[cur-key cur-value] (first left-entries)]
+                  (recur (rest left-entries) (f acc cur-key cur-value)))))))))
 
 (defn- join-root [root others]
   (loop [result-root root
@@ -200,7 +200,7 @@
 
 (defn- equals-node [node another]
   (if (not (or (instance? TrieNode node) (instance? TrieNode another)))
-    (throw (ex-info "Wrong type of args"))
+    (throw (ex-info "Wrong type of args" {:args [node another]}))
     (let [node-children (:children node)
           another-children (:children another)
           equals-count (= (count node-children) (count another-children))
@@ -221,7 +221,7 @@
 
 (defn- equals-root [root another]
   (if (not (or (instance? RootNode root) (instance? RootNode another)))
-    (throw (ex-info "Wrong type of args"))
+    (throw (ex-info "Wrong type of args" {:args [root another]}))
     (let [root-children (:children root)
           another-children (:children another)
           equals-count (= (count root-children) (count another-children))]
@@ -246,13 +246,13 @@
   (trie-from-entries (get-entries trie))
   (get-keys trie)
   (get-values trie)
-  (filter-root (fn [k v] (> v 4)) trie)
-  (tfilter trie (fn [k v] (> v 5)))
+  (filter-root (fn [_ v] (> v 4)) trie)
+  (tfilter trie (fn [_ v] (> v 5)))
   (tmap trie (fn [k v] [k (* v v)]))
-  (reduce-left-root (fn [acc k v] (str acc v)) "str: " trie)
-  (reduce-right-root (fn [acc k v] (str acc v)) "str: " trie)
-  (reducel trie (fn [acc k v] (str acc v)) "str: ")
-  (reducer trie (fn [acc k v] (str acc v)) "str: ")
+  (reduce-left-root (fn [acc _ v] (str acc v)) "str: " trie)
+  (reduce-right-root (fn [acc _ v] (str acc v)) "str: " trie)
+  (reducel trie (fn [acc _ v] (str acc v)) "str: ")
+  (reducer trie (fn [acc _ v] (str acc v)) "str: ")
   (join-root trie [trie trie])
   (def trie-b (->RootNode {\b (->TrieNode \b nil false {\b (->TrieNode \b 5 true {\c (->TrieNode \c 5 true {})}) \c (->TrieNode \c 6 true {})})}))
   (def trie-c (->RootNode {\a (->TrieNode \a nil false {\b (->TrieNode \b 10 true {\d (->TrieNode \d 5 true {})}) \c (->TrieNode \c 6 true {})})}))

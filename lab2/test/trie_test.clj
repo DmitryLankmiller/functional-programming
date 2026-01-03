@@ -1,11 +1,12 @@
 (ns trie-test
   (:require [trie :as t]
-            [clojure.test :refer [deftest is run-all-tests]]))
+            [clojure.test :refer [deftest is]]))
 
 (defn rand-char []
   (char (+ (int \space) (rand-int (- (int \~) (int \space))))))
 
-(defn rand-key [n] "Generate random key with length n (must be > 1)"
+(defn rand-key "Generate random key with length n (must be > 1)"
+  [n]
   {:pre [(>= n 1)]}
   (apply str (vec (for [_ (range n)]
                     (rand-char)))))
@@ -19,7 +20,7 @@
 
 (deftest get-from-empty-trie
   (let [trie (t/empty-trie)]
-    (dotimes [i 10]
+    (dotimes [_ 10]
       (is (= nil (t/tget trie (rand-key (inc (rand-int 10)))))))))
 
 (deftest trie-get-entries
@@ -28,9 +29,10 @@
     (is (contains? (set entries) [[\a \b] 5]))
     (is (contains? (set entries) [[\c] 6]))
     (loop [left-entries entries]
-      (if-not (empty? left-entries)
-        (let [[k v] (first left-entries)]
-          (is (= v (t/tget trie k))))))))
+      (if (seq left-entries) true
+          (let [[k v] (first left-entries)]
+            (is (= v (t/tget trie k)))
+            (recur (rest left-entries)))))))
 
 (deftest trie-equals
   (let [trie (t/create-trie {\a (t/create-node \a nil false {\b (t/create-node \b 5 true {})}) \c (t/create-node \c 6 true {})})
@@ -45,8 +47,7 @@
 
 (deftest trie-trie-from-entries
   (let [trie (t/create-trie {\a (t/create-node \a nil false {\b (t/create-node \b 5 true {})}) \c (t/create-node \c 6 true {})})
-        expected-entries [[[\a \b] 5] [[\c] 6]]
-        entries (t/get-entries trie)]
+        expected-entries [[[\a \b] 5] [[\c] 6]]]
     (is (t/tequals? trie (t/trie-from-entries expected-entries)))
     (is (t/tequals? trie (t/trie-from-entries (t/get-entries trie))))
     (is (t/tequals? (t/empty-trie) (t/trie-from-entries [])))))
@@ -75,19 +76,19 @@
     (is (t/tequals? (t/delete trie "cd") trie))
     (is (t/tequals? (t/delete trie "abc") trie))
     (is (t/tequals? (t/delete trie "UIDSfh344") trie))
-    (dotimes [i 10]
+    (dotimes [_ 10]
       (is (= (t/empty-trie) (t/delete (t/empty-trie) (rand-key (inc (rand-int 10)))))))))
 
 (deftest trie-filter
   (let [trie (t/create-trie {\a (t/create-node \a nil false {\b (t/create-node \b 5 true {})}) \c (t/create-node \c 6 true {})})
         expected-trie-1 (t/create-trie {\c (t/create-node \c 6 true {})})
         expected-trie-2 (t/create-trie {\a (t/create-node \a nil false {\b (t/create-node \b 5 true {})})})]
-    (is (t/tequals? (t/tfilter trie (fn [k v] true)) trie))
-    (is (t/tequals? (t/tfilter trie (fn [k v] (= k [\c]))) expected-trie-1))
-    (is (t/tequals? (t/tfilter trie (fn [k v] (= k [\a \b]))) expected-trie-2))
-    (is (t/tequals? (t/tfilter trie (fn [k v] false)) (t/empty-trie)))
-    (dotimes [i 10]
-      (t/tequals? (t/tfilter (t/empty-trie) (fn [k v] (> (rand 0.5)))) (t/empty-trie)))))
+    (is (t/tequals? (t/tfilter trie (fn [_ _] true)) trie))
+    (is (t/tequals? (t/tfilter trie (fn [k _] (= k [\c]))) expected-trie-1))
+    (is (t/tequals? (t/tfilter trie (fn [k _] (= k [\a \b]))) expected-trie-2))
+    (is (t/tequals? (t/tfilter trie (fn [_ _] false)) (t/empty-trie)))
+    (dotimes [_ 10]
+      (t/tequals? (t/tfilter (t/empty-trie) (fn [_ _] (> (rand) 0.5))) (t/empty-trie)))))
 
 (deftest trie-map
   (let [trie (t/create-trie {\a (t/create-node \a nil false {\b (t/create-node \b 5 true {})}) \c (t/create-node \c 6 true {})})
@@ -95,15 +96,15 @@
         expected-trie-2 (t/create-trie {\a (t/create-node \a nil false {\b (t/create-node \b 25 true {})}) \c (t/create-node \c 36 true {})})
         expected-trie-3 (t/create-trie {\c (t/create-node \c nil false {\d (t/create-node \d 7 true {})}) \e (t/create-node \e 8 true {})})]
     (is (t/tequals? (t/tmap trie (fn [k v] [k v])) trie))
-    (is (t/tequals? (t/tmap trie (fn [k v] [k 1])) expected-trie-1))
+    (is (t/tequals? (t/tmap trie (fn [k _] [k 1])) expected-trie-1))
     (is (t/tequals? (t/tmap trie (fn [k v] [k (* v v)])) expected-trie-2))
     (is (t/tequals? (t/tmap trie (fn [k v] [(map #(char (+ 2 (int %))) k) (+ 2 v)])) expected-trie-3))
-    (dotimes [i 10]
-      (t/tequals? (t/tmap (t/empty-trie) (fn [k v] [(rand-key (inc (rand-int 10))) (rand-int 100)])) (t/empty-trie)))))
+    (dotimes [_ 10]
+      (t/tequals? (t/tmap (t/empty-trie) (fn [_ _] [(rand-key (inc (rand-int 10))) (rand-int 100)])) (t/empty-trie)))))
 
 (deftest trie-reducel
   (let [trie-1 (t/create-trie {\a (t/create-node \a nil false {\b (t/create-node \b 5 true {})}) \c (t/create-node \c 6 true {})})
-        fn-1 (fn [acc k v] (str acc v))
+        fn-1 (fn [acc _ v] (str acc v))
         acc-1 "str: "
         expected-value-1 "str: 56"
         trie-2 (t/create-trie {1 (t/create-node 1 nil false {2 (t/create-node 2 5 true {})}) 3 (t/create-node 3 6 true {})})
@@ -116,7 +117,7 @@
 
 (deftest trie-reducer
   (let [trie-1 (t/create-trie {\a (t/create-node \a nil false {\b (t/create-node \b 5 true {})}) \c (t/create-node \c 6 true {})})
-        fn-1 (fn [acc k v] (str acc v))
+        fn-1 (fn [acc _ v] (str acc v))
         acc-1 "str: "
         expected-value-1 "str: 65"
         trie-2 (t/create-trie {1 (t/create-node 1 nil false {2 (t/create-node 2 5 true {})}) 3 (t/create-node 3 6 true {})})
