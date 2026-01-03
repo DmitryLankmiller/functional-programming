@@ -168,7 +168,7 @@
 
 (defn- reduce-left-root [f val root]
   (let [entries (get-entries root)]
-    (if (< 1 (count entries)) val
+    (if (> 1 (count entries)) val
         (let [[first-key first-value] (first entries)]
           (loop [left-entries (rest entries)
                  acc (f val first-key first-value)]
@@ -178,7 +178,7 @@
 
 (defn- reduce-right-root [f val root]
   (let [entries (get-entries root)]
-    (if (< 1 (count entries)) val
+    (if (> 1 (count entries)) val
         (let [[first-key first-value] (last entries)]
           (loop [left-entries (rest (reverse entries))
                  acc (f val first-key first-value)]
@@ -238,7 +238,6 @@
 
 (comment
   (def trie (->RootNode {\a (->TrieNode \a nil false {\b (->TrieNode \b 5 true {\c (->TrieNode \c 5 true {})}) \c (->TrieNode \c 6 true {})})}))
-  (instance? TrieNode (get (:children trie) \a))
   (tget trie "ab")
   (tget trie "abcd")
   (insert trie "cb" 7)
